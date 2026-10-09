@@ -53,7 +53,8 @@ export interface Config {
    * Default `'rtk'`.
    */
   command?: string
-  /** Extra CLI arguments passed to rtk. Default `[]`. */
+  /** Extra CLI arguments passed to rtk. Default `['pipe']`, the stdin/stdout
+   * mode required by current rtk releases. */
   args?: string[]
   /**
    * Tool names whose plain-text results are piped through rtk.
@@ -80,7 +81,7 @@ export interface Config {
 export const Config: z<Config> = z.object({
   enabled: z.boolean().default(true),
   command: z.string().default('rtk'),
-  args: z.array(z.string()).default([]),
+  args: z.array(z.string()).default(['pipe']),
   tools: z.array(z.string()).default(['bash', 'job_output']),
   minBytes: z.number().step(1).min(0).default(2048),
   timeoutMs: z.number().step(1).min(1).default(15_000),
@@ -151,7 +152,7 @@ export function resolveRtkPath(
  * status line last too, so trailing lines matching these contracts are the
  * status block; everything before is the output to condense.
  */
-const MARKER_LINE = /^\[(?:exit code: -?\d+|killed by signal: [^\]]+|timed out after \d+ms|sandbox: [^\]]+|status: [^\]]+)\]$/
+const MARKER_LINE = /^\[(?:exit code: -?\d+|killed by signal: [^\]]+|timed out after \d+ms|sandbox: [^\]]+|output truncated; full output: [^\]]+|stopped: [^\]]+|status: [^\]]+)\]$/
 
 /**
  * Split a rendered tool result into its output body and its trailing status
@@ -307,7 +308,7 @@ export function apply(ctx: Context, config: Config = {}): void {
   // Resolve a bare command name through PATH plus the common install dirs the
   // minimal harness PATH misses (Homebrew, Rustup).
   const command = resolveRtkPath(configuredCommand)
-  const args = config.args ?? []
+  const args = config.args ?? ['pipe']
   const toolSet = new Set(config.tools ?? ['bash', 'job_output'])
   const minBytes = config.minBytes ?? 2048
   const timeoutMs = config.timeoutMs ?? 15_000
@@ -336,6 +337,9 @@ export function apply(ctx: Context, config: Config = {}): void {
     // body replaces only the output, and the markers are re-appended after it.
     const { body, markers } = splitTrailingMarkers(text)
     if (body.length === 0) return decision
+    // A newer DSH status marker that we do not recognize must never enter rtk.
+    // Fail closed rather than risk hiding an exit, truncation, or job handoff.
+    if (/\n\[[^\]\n]+\]$/.test(body)) return decision
 
     const outcome = await runRtk(command, args, body, exec.signal, timeoutMs)
     if (outcome.text === undefined) {

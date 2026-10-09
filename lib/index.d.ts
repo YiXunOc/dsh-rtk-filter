@@ -44,7 +44,8 @@ export interface Config {
      * Default `'rtk'`.
      */
     command?: string;
-    /** Extra CLI arguments passed to rtk. Default `[]`. */
+    /** Extra CLI arguments passed to rtk. Default `['pipe']`, the stdin/stdout
+     * mode required by current rtk releases. */
     args?: string[];
     /**
      * Tool names whose plain-text results are piped through rtk.

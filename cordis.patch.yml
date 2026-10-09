@@ -6,5 +6,7 @@
       config:
         # rtk must be on PATH (or set command to its absolute path).
         command: rtk
+        # Current rtk releases read stdin in Unix pipe mode.
+        args: ['pipe']
         # Only outputs larger than this many bytes are piped through rtk.
         minBytes: 2048

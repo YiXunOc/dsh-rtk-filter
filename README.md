@@ -139,7 +139,7 @@ GUI 应用从 Finder 启动时继承的是 launchd 的最小 PATH（通常只有
 | --- | --- | --- | --- |
 | `enabled` | boolean | `true` | 总开关；`false` 时插件完全空转（不注册任何监听器） |
 | `command` | string | `'rtk'` | rtk 可执行文件；裸名先走 PATH，再自动探测候选目录（Homebrew/Rustup 等），或直接写绝对路径 |
-| `args` | string[] | `[]` | 透传给 rtk 的附加参数；通用推荐 `['pipe']`（见下节） |
+| `args` | string[] | `['pipe']` | 透传给 rtk 的附加参数；当前 rtk 通过 `pipe` 从 stdin 读取并向 stdout 输出。自动识别未命中时原样透传；针对确定的格式可显式设为 `['pipe', '-f', 'cargo-test']` 等 |
 | `tools` | string[] | `['bash', 'job_output']` | 需要过滤的工具名；可加 `run_code`、`pwsh` 等 |
 | `minBytes` | number | `2048` | 低于此字节数的输出直接放行（避免每条命令都付 RTK 延迟） |
 | `timeoutMs` | number | `15000` | rtk 超时；超时则 SIGKILL 整个进程组并保留原始输出 |

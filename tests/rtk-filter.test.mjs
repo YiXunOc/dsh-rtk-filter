@@ -69,6 +69,10 @@ test('loader export shape: name/inject/Config/apply present, no default export',
   assert.equal('default' in RtkFilter, false)
 })
 
+test('current rtk pipe mode is the default', () => {
+  assert.deepEqual(RtkFilter.Config({}).args, ['pipe'])
+})
+
 test('disabled mode is a true no-op', async () => {
   const ctx = await setup({ enabled: false })
   const body = bigBody()
@@ -110,6 +114,25 @@ test('job_output results are condensed and keep their status line', async () => 
   assert.ok(text.startsWith('output line 0 of 60'))
   assert.ok(text.endsWith('[status: completed]'))
   assert.ok(text.includes('[rtk: output condensed'))
+})
+
+test('new DSH truncation and stopped markers stay outside the condensed body', async () => {
+  const ctx = await setup()
+  const body = bigBody()
+  const rendered = `${body}\n[output truncated; full output: /tmp/full-output]\n[stopped: user]`
+  ctx.tools.register(textTool('bash', rendered))
+  const result = await ctx.tools.execute(exec('bash'))
+  const text = textOf(result.content)
+  assert.ok(!text.includes('output line 30 of 60'))
+  assert.ok(text.endsWith('[output truncated; full output: /tmp/full-output]\n[stopped: user]'))
+})
+
+test('unknown trailing DSH marker leaves the entire result untouched', async () => {
+  const ctx = await setup()
+  const rendered = `${bigBody()}\n[future status: work continuing]`
+  ctx.tools.register(textTool('bash', rendered))
+  const result = await ctx.tools.execute(exec('bash'))
+  assert.equal(textOf(result.content), rendered)
 })
 
 test('small outputs pass through untouched (minBytes gate)', async () => {
