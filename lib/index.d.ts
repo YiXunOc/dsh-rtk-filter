@@ -29,6 +29,7 @@
  *
  * @module dsh-rtk-filter
  */
+import { type ChildProcessWithoutNullStreams } from 'node:child_process';
 import type { Context } from '@deepseek-ai/cordis';
 import z from '@deepseek-ai/schemastery';
 import type { ContentBlock } from '@deepseek-ai/dsh-llm';
@@ -106,6 +107,8 @@ export interface RtkRunResult {
     /** Human-readable failure reason for the rate-limited warn log (absent on success). */
     failure?: string;
 }
+/** Terminate RTK without using unsupported negative process IDs on Windows. */
+export declare function terminateRtkChild(child: Pick<ChildProcessWithoutNullStreams, 'pid' | 'kill'>, platform?: NodeJS.Platform, kill?: (pid: number, signal: NodeJS.Signals) => void): void;
 /**
  * Run `command` once: write `input` to its stdin, capture stdout/stderr, and
  * resolve with the condensed text. Never rejects — every failure (spawn

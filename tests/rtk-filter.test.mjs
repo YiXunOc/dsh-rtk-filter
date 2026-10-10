@@ -216,6 +216,20 @@ test('caller cancellation kills the rtk process group and settles promptly', asy
   assert.equal(result.error?.info?.code, 'ABORTED')
 })
 
+test('Windows cancellation uses direct child termination; POSIX uses process groups', () => {
+  const calls = []
+  const child = { pid: 123, kill: signal => { calls.push(['child', signal]); return true } }
+  const group = (pid, signal) => { calls.push(['group', pid, signal]) }
+  RtkFilter.terminateRtkChild(child, 'win32', group)
+  assert.deepEqual(calls, [['child', 'SIGKILL']])
+  calls.length = 0
+  RtkFilter.terminateRtkChild(child, 'linux', group)
+  assert.deepEqual(calls, [['group', -123, 'SIGKILL']])
+  calls.length = 0
+  RtkFilter.terminateRtkChild(child, 'linux', () => { throw new Error('already gone') })
+  assert.deepEqual(calls, [['child', 'SIGKILL']])
+})
+
 /** exec with a caller-owned signal. */
 function execWithSignal(name, signal) {
   return { callId: `call-${name}`, name, arguments: {}, signal }

@@ -1,6 +1,6 @@
 {
   "name": "dsh-rtk-filter",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "DSH plugin: pipes oversized command output through the external rtk CLI and hands the model RTK's condensed output instead of the raw text (a tools/post-execute result transformer).",
   "repository": {
     "type": "git",
@@ -40,8 +40,8 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.0",
-    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6 || 0.2.1-alpha.1",
-    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6 || 0.2.1-alpha.1",
+    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6 || 0.2.1-alpha.1 || 0.2.1-alpha.2",
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6 || 0.2.1-alpha.1 || 0.2.1-alpha.2",
     "@deepseek-ai/schemastery": "^3.18.0"
   },
   "devDependencies": {

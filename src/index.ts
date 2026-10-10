@@ -188,6 +188,23 @@ export interface RtkRunResult {
   failure?: string
 }
 
+/** Terminate RTK without using unsupported negative process IDs on Windows. */
+export function terminateRtkChild(
+  child: Pick<ChildProcessWithoutNullStreams, 'pid' | 'kill'>,
+  platform = process.platform,
+  kill: (pid: number, signal: NodeJS.Signals) => void = process.kill,
+): void {
+  if (platform === 'win32' || child.pid === undefined) {
+    child.kill('SIGKILL')
+    return
+  }
+  try {
+    kill(-child.pid, 'SIGKILL')
+  } catch {
+    child.kill('SIGKILL')
+  }
+}
+
 /**
  * Run `command` once: write `input` to its stdin, capture stdout/stderr, and
  * resolve with the condensed text. Never rejects — every failure (spawn
@@ -214,18 +231,7 @@ export function runRtk(
       resolve({ text: undefined, failure: `spawn failed: ${String(error)}` })
       return
     }
-    const killGroup = (): void => {
-      if (child.pid === undefined) {
-        child.kill('SIGKILL')
-        return
-      }
-      try {
-        process.kill(-child.pid, 'SIGKILL')
-      } catch {
-        // The group may already be gone (ESRCH race); fall back to the leader.
-        child.kill('SIGKILL')
-      }
-    }
+    const killGroup = (): void => terminateRtkChild(child)
     let stdout = ''
     let stderr = ''
     let timedOut = false
