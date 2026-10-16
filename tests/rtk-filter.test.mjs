@@ -116,15 +116,27 @@ test('job_output results are condensed and keep their status line', async () => 
   assert.ok(text.includes('[rtk: output condensed'))
 })
 
-test('new DSH truncation and stopped markers stay outside the condensed body', async () => {
+test('new DSH truncation leaves the entire result untouched', async () => {
   const ctx = await setup()
   const body = bigBody()
   const rendered = `${body}\n[output truncated; full output: /tmp/full-output]\n[stopped: user]`
   ctx.tools.register(textTool('bash', rendered))
   const result = await ctx.tools.execute(exec('bash'))
   const text = textOf(result.content)
-  assert.ok(!text.includes('output line 30 of 60'))
-  assert.ok(text.endsWith('[output truncated; full output: /tmp/full-output]\n[stopped: user]'))
+  assert.equal(text, rendered)
+})
+
+test('DSH dropped-output and background-handoff notices leave the entire result untouched', async () => {
+  for (const suffix of [
+    '[some output was dropped from memory; full output: /spill/out.log]\n[status: running]',
+    '[still running after 100ms; moved to background job job-42]\nThe command keeps running in the background.',
+    '[output truncated]\n[status: completed]',
+  ]) {
+    const ctx = await setup()
+    const rendered = `${bigBody()}\n${suffix}`
+    ctx.tools.register(textTool('bash', rendered))
+    assert.equal(textOf((await ctx.tools.execute(exec('bash'))).content), rendered)
+  }
 })
 
 test('unknown trailing DSH marker leaves the entire result untouched', async () => {
